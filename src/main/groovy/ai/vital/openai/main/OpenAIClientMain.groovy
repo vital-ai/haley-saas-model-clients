@@ -27,45 +27,51 @@ class OpenAIClientMain extends groovy.lang.Script {
 	@Override
 	public Object run() {
 		
-	String configFile = "./config/openaiClient.conf"
+		// Get API Key
+		
+		String configFile = "./config/openaiClient.conf"
 	
-	Config conf = ConfigFactory.parseFileAnySyntax(new File(configFile))
+		Config conf = ConfigFactory.parseFileAnySyntax(new File(configFile))
 	
-	apiKey = conf.getString("apiKey")
+		apiKey = conf.getString("apiKey")
 			
-	DaVinci3Model modelClass = new DaVinci3Model()
+		// Model to use
+		DaVinci3Model modelClass = new DaVinci3Model()
+		
+		// Client is specific to a model
+		OpenAIJavaClient modelClient = new OpenAIJavaClient(apiKey, modelClass)
 	
-	String modelName = modelClass.getModelName()
+		String stateName = "New Jersey"
 	
-	String modelVersion = modelClass.getModelVersion()
-	
-	OpenAIJavaClient modelClient = new OpenAIJavaClient(apiKey, modelName, modelVersion)
-	
-	String stateName = "New Jersey"
-	
-	String promptString = """
+		// Note: encoding of newlines is necessary in promptString
+		// Should be moved within creating request?
+		
+		String promptString = """
 Write a short story set in ${stateName}.
 The story should be about a monkey who saves the world by being very brave and smart.
 The story has a twist ending.
 """.trim().replaceAll("\n","\\\\n")
 	
-	Double temperature = 0.80d
-	Integer maxTokens = 900
+		Double temperature = 0.80d
 	
-	TextCompletionRequest request = modelClass.generatePredictionRequest(promptString, temperature, maxTokens)
+		Integer maxTokens = 900
+	
+		// Helper to Generate Request
+		TextCompletionRequest request = modelClass.generatePredictionRequest(promptString, temperature, maxTokens)
 		
-	TextCompletionResponse response = modelClient.generatePrediction(request,  60_000)
+		// Get Response for Request
+		TextCompletionResponse response = modelClient.generatePrediction(request,  60_000)
 	
-	if(response == null) {
+		if(response == null || response.errorCode != 0) {
 		
-		println "Timeout or other error."
+			println "Timeout or other error."
 		
-		System.exit(1)	
-	}
+			System.exit(1)	
+		}
 	
-	TextCompletion textCompletion = response.textCompletionList[0]
+		TextCompletion textCompletion = response.textCompletionList[0]
 	
-	println "Generated Text:\n" + textCompletion.textCompletion
+		println "Generated Text:\n" + textCompletion.textCompletion
 	
 	}
 	

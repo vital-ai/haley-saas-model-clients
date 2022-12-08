@@ -8,6 +8,7 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.NameValuePair
 import org.apache.http.util.EntityUtils
+import ai.vital.openai.model.AbstractModel
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import groovy.json.JsonOutput
@@ -32,15 +33,17 @@ class OpenAIJavaClient {
 		
 	String apiKey = null
 	
-	OpenAIJavaClient(String apiKey, String modelName, String modelVersion) {
+	OpenAIJavaClient(String apiKey, AbstractModel model) {
 		
 		this.apiKey = apiKey
 		
-		this.modelName = modelName
+		this.modelName = model.getModelName()
 		
-		this.modelVersion = modelVersion
+		this.modelVersion = model.getModelVersion()
 				
 	}
+	
+	// TODO implement timeout
 	
 	TextCompletionResponse generatePrediction(TextCompletionRequest request, Integer timeout_ms) {
 				
