@@ -1,0 +1,11 @@
+.classpath
+.project
+.settings/
+
+target/
+outputImages/*.png
+
+
+config/*.config
+config/*.conf
+
