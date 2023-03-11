@@ -8,7 +8,7 @@ To build:
 
 ```mvn package```
 
-run with:
+sample run with:
 
 ```./bin/runOpenAIClientMain.sh```
 
@@ -27,4 +27,6 @@ A class is specified for each OpenAI model to help with data validation and comp
 The currently defined models are:
 * text-davinci-002
 * text-davinci-003
+* gpt 35 chat turbo 0301
+* transcription (whisper)
 

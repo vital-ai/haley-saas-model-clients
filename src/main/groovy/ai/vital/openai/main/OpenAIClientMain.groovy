@@ -4,8 +4,8 @@ import ai.vital.openai.api.OpenAIJavaClient
 import ai.vital.openai.api.TextCompletion
 import ai.vital.openai.api.TextCompletionRequest
 import ai.vital.openai.api.TextCompletionResponse
-import ai.vital.openai.model.DaVinci2Model
-import ai.vital.openai.model.DaVinci3Model
+import ai.vital.openai.model.DaVinci2TextCompletionModel
+import ai.vital.openai.model.DaVinci3TextCompletionModel
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.BasicConfigurator
@@ -36,7 +36,7 @@ class OpenAIClientMain extends groovy.lang.Script {
 		apiKey = conf.getString("apiKey")
 			
 		// Model to use
-		DaVinci3Model modelClass = new DaVinci3Model()
+		DaVinci3TextCompletionModel modelClass = new DaVinci3TextCompletionModel()
 		
 		// Client is specific to a model
 		OpenAIJavaClient modelClient = new OpenAIJavaClient(apiKey, modelClass)

@@ -3,11 +3,11 @@ package ai.vital.openai.model
 import ai.vital.openai.api.ModelRequest
 import ai.vital.openai.api.TextCompletionRequest
 
-class DaVinci2Model extends AbstractTextCompetionModel {
+class DaVinci3TextCompletionModel extends AbstractTextCompetionModel {
 
 	static String modelName = "text-davinci"
 	
-	static String modelVersion = "002"
+	static String modelVersion = "003"
 	
 	@Override
 	public String getModelName() {
@@ -63,7 +63,6 @@ class DaVinci2Model extends AbstractTextCompetionModel {
 		
 		return request
 	}
-	
 	
 	public TextCompletionRequest generatePredictionRequest(
 		String prompt,
