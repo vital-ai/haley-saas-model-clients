@@ -5,6 +5,8 @@ import ai.vital.openai.api.ChatMessage
 import ai.vital.openai.api.ChatRequest
 import ai.vital.openai.api.ChatResponse
 import ai.vital.openai.api.OpenAIJavaClient
+import ai.vital.openai.api.OpenAIJavaStreamingClient
+import ai.vital.openai.api.StreamResponseHandler
 import ai.vital.openai.api.TextCompletion
 import ai.vital.openai.api.TextCompletionRequest
 import ai.vital.openai.api.TextCompletionResponse
@@ -14,7 +16,8 @@ import com.typesafe.config.ConfigFactory
 import org.apache.log4j.BasicConfigurator
 import ai.vital.openai.api.ChatMessageType
 
-class OpenAIClientGPT4Main extends groovy.lang.Script {
+
+class OpenAIStreamingClientGPT4Main extends groovy.lang.Script {
 
 	String apiKey = null
 	
@@ -23,7 +26,7 @@ class OpenAIClientGPT4Main extends groovy.lang.Script {
 		// sets up logging to defaults
 		BasicConfigurator.configure()
 		
-		OpenAIClientGPT4Main app = new OpenAIClientGPT4Main()
+		OpenAIStreamingClientGPT4Main app = new OpenAIStreamingClientGPT4Main()
 		
 		app.run()		
 	}
@@ -41,8 +44,24 @@ class OpenAIClientGPT4Main extends groovy.lang.Script {
 		
 		// Model to use
 		GPT4ChatModel modelClass = new GPT4ChatModel()
+		
+		
+		StreamResponseHandler handler = new StreamResponseHandler() {
+	
+			@Override
+			void handleStreamResponse(Map dataMap) {
+				
+				
+				println "HandleData: " + dataMap
+				
+				
+			}
+	
+		}
+		
+		
 			
-		OpenAIJavaClient modelClient = new OpenAIJavaClient(apiKey, modelClass)
+		OpenAIJavaStreamingClient modelClient = new OpenAIJavaStreamingClient(apiKey, modelClass)
 			
 		Chat currentChat = new Chat()
 		
@@ -75,7 +94,7 @@ Each part of the story circle should have a separate paragraph.
 		
 		ChatRequest request = modelClass.generatePredictionRequest(currentChat)
 		
-		ChatResponse response = modelClient.generatePrediction(request,  60_000)
+		ChatResponse response = modelClient.generatePrediction(request,  handler, 100_000)
 		
 		if(response == null || response.errorCode != 0) {
 			
@@ -97,5 +116,4 @@ Each part of the story circle should have a separate paragraph.
 		
 			
 	}
-	
 }
