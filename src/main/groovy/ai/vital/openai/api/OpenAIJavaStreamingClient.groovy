@@ -489,7 +489,15 @@ class OpenAIJavaStreamingClient {
 
 															// println "ResultMap: " + result
 
+															try {
 															handler.handleStreamResponse(result)
+															} catch(Exception ex) {
+																
+																log.error("Exception handling data: " + ex.localizedMessage)
+																
+																
+															}
+															
 															
 															// "choices":[{"delta":{"content":"."}
 
