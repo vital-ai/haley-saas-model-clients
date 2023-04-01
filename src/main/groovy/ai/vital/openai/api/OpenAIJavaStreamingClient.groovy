@@ -425,6 +425,24 @@ class OpenAIJavaStreamingClient {
 	// This is overkill for a single post but potentially needed
 	// for supporting more complex scenarios like getting streaming results back
 	
+	// TODO pass in a task id such that the id can be used to kill the task as it's running
+	// keep a map of id --> task for the instance of the client
+	// the task is the interrupt task:
+	// TimerTask task = new TimerTask() {
+	// remove task from map when it completes
+	// add additional method to cancel a task given the id
+	// cancel method should just need to do:
+	// synchronized (task) {
+    //  task.notify()
+ 	// }
+	// to notify the timer task to run immediately
+	
+	// alternatively the "future" could be put into a similar map and 
+	// canceled directly.
+	// but then the timer, etc. would need to be cleaned up
+	// whereas triggering the timer interrupt should do the cleanup
+	
+	
 	PostStreamingStatus execPost(CloseableHttpClient httpclient, HttpPost httppost, StreamResponseHandler handler, Integer timeout_ms) {
 		
 		// by default assume error
@@ -469,11 +487,18 @@ class OpenAIJavaStreamingClient {
 											
 											while ((bytesRead = inputStream.read(buffer)) != -1) {
 												
-												String chunk = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8)
+												String chunkBuffer = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8)
 												
-												// print("DATA: " + chunk)
+												log.info("DATA: " + chunkBuffer)
+												
 												// DATA: data: {"id":"chatcmpl-6xJrz7Z6nKtEoNeiUEcHjxb61weK2","object":"chat.completion.chunk","created":1679595751,"model":"gpt-4-0314","choices":[{"delta":{"content":"."},"index":0,"finish_reason":null}]}
 
+												List<String> chunkList = chunkBuffer.split("\n")
+												
+												log.info("ChunkLineCount: " + chunkList.size())
+												
+												for(String chunk in chunkList) {
+												
 												if(chunk.startsWith("data: ")) {
 													
 													if(chunk == "data: [DONE]") {
@@ -490,7 +515,7 @@ class OpenAIJavaStreamingClient {
 															// println "ResultMap: " + result
 
 															try {
-															handler.handleStreamResponse(result)
+																handler.handleStreamResponse(result)
 															} catch(Exception ex) {
 																
 																log.error("Exception handling data: " + ex.localizedMessage)
@@ -522,10 +547,11 @@ class OpenAIJavaStreamingClient {
 
 														} catch(Exception ex) {
 															
-															println "Exception parsing data map: " + ex.localizedMessage		
+															log.error("Exception parsing data map: " + ex.localizedMessage)	
 														}
 													}
 												}
+											}
 											}
 										} catch(Exception ex) {
 											
