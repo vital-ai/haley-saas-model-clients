@@ -442,6 +442,50 @@ class OpenAIJavaStreamingClient {
 	// but then the timer, etc. would need to be cleaned up
 	// whereas triggering the timer interrupt should do the cleanup
 	
+	/*
+	 
+	 DATA: data: {"id":"chatcmpl-71b1myp21cgVkbPorp2DC8Tmu3PAY","object":"chat.completion.chunk","created":1680615018
+,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":" especially"},"index":0,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-71b1myp21cgVkbPorp2DC8Tmu3PAY","object":"chat.completion.chunk","created":1680615018,"model":"gpt-3.5-turbo-0301","choi
+ces":[{"delta":{"content":" for"},"index":0,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-71b1myp21cgVkbPorp2DC8Tmu3PAY","object":"chat.completion.chunk","created":1680615018,"model":"gpt-3.5-turbo-0301","choi
+ces":[{"delta":{"content":" larger"},"index":0,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-71b1myp21cgVkbPorp2DC8Tmu3PAY","object":"chat.completion.chunk","created":1680615018,"model":"gpt-3.5-turbo-0301","choi
+ces":[{"delta":{"content":" arrays"},"index":0,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-71b1myp21cgVkbPorp2DC8Tmu3PAY","object":"chat.completion.chunk","created":1680615018,"model":"gpt-3.5-turbo-0301","choi
+ces":[{"delta":{"content":"."}
+	 
+	 
+The current character read is '}' with an int value of 125
+issue parsing JSON array
+line number 1
+index number 166
+{"id":"chatcmpl-71b1myp21cgVkbPorp2DC8Tmu3PAY","object":"chat.completion.chunk","created":1680615018,"model":"gpt-3.5-turbo-0301","choices":[
+{"delta":{"content":"."}
+.............................................................................................................................................
+.........................^
+ 2023-04-04 13:30:46 INFO  - DATA: ,"index":0,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-71b1myp21cgVkbPorp2DC8Tmu3PAY","object":"chat.completion.chunk","created":1680615018,"model":"gpt-3.5-turbo-0301","choi
+ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
+
+
+
+
+,"index":0,"finish_reason":null}]}
+
+	 */
+
+	// the JSON can be split across "data" lines.
+	// how to buffer and recombine into valid json data?
+	
+
+		
+	
 	
 	PostStreamingStatus execPost(CloseableHttpClient httpclient, HttpPost httppost, StreamResponseHandler handler, Integer timeout_ms) {
 		
@@ -493,6 +537,19 @@ class OpenAIJavaStreamingClient {
 												
 												// DATA: data: {"id":"chatcmpl-6xJrz7Z6nKtEoNeiUEcHjxb61weK2","object":"chat.completion.chunk","created":1679595751,"model":"gpt-4-0314","choices":[{"delta":{"content":"."},"index":0,"finish_reason":null}]}
 
+												if(chunkBuffer.endsWith("\n")) {
+													
+													log.info("Chunk Buffer ends with newline: " + chunkBuffer)
+													
+												}
+												else {
+													
+													// check for this case to confirm we should add the next chunk to this before parsing
+													log.error("Chunk Buffer DOES NOT end with newline: " + chunkBuffer)
+													
+													
+												}
+												
 												List<String> chunkList = chunkBuffer.split("\n")
 												
 												log.info("ChunkLineCount: " + chunkList.size())
@@ -515,12 +572,13 @@ class OpenAIJavaStreamingClient {
 															// println "ResultMap: " + result
 
 															try {
+																
 																handler.handleStreamResponse(result)
+																
 															} catch(Exception ex) {
 																
 																log.error("Exception handling data: " + ex.localizedMessage)
-																
-																
+																	
 															}
 															
 															
@@ -547,7 +605,9 @@ class OpenAIJavaStreamingClient {
 
 														} catch(Exception ex) {
 															
-															log.error("Exception parsing data map: " + ex.localizedMessage)	
+															log.error("Exception parsing data map: " + ex.localizedMessage)
+															log.error("Exception parsing data: " + data)
+															
 														}
 													}
 												}
