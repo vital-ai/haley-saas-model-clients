@@ -575,6 +575,11 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 																
 																handler.handleStreamResponse(result)
 																
+																// allow other threads control?
+																
+																Thread.sleep(10)
+																
+																
 															} catch(Exception ex) {
 																
 																log.error("Exception handling data: " + ex.localizedMessage)
@@ -629,11 +634,6 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 								return null;
 							}
 						})
-						
-						// allow other threads control?
-						
-						Thread.sleep(10)
-						
 						
 						taskPostStatus.status = "Ok"
 						
