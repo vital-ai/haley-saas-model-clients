@@ -621,11 +621,19 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 									}
 								} else {
 									
+									// log error?
+									
+									
 									throw new ClientProtocolException("Unexpected status code: " + statusCode)
 								}
 								return null;
 							}
 						})
+						
+						// allow other threads control?
+						
+						Thread.sleep(10)
+						
 						
 						taskPostStatus.status = "Ok"
 						
