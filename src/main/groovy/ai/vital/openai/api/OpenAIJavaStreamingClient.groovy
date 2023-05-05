@@ -577,7 +577,7 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 																
 																// allow other threads control?
 																
-																Thread.sleep(10)
+																Thread.sleep(100)
 																
 																
 															} catch(Exception ex) {
