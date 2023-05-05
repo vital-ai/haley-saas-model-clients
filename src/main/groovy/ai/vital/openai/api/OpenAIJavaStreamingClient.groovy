@@ -576,8 +576,7 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 																handler.handleStreamResponse(result)
 																
 																// allow other threads control?
-																
-																Thread.sleep(100)
+																// Thread.sleep(100)
 																
 																
 															} catch(Exception ex) {
