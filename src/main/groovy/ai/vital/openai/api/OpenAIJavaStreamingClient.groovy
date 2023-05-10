@@ -52,7 +52,7 @@ class PostStreamingStatus {
 
 public interface StreamResponseHandler {
 	
-		void handleStreamResponse(Map dataMap)
+		 void handleStreamResponse(Map dataMap)
 	
 	}
 
@@ -545,12 +545,26 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 												else {
 													
 													// check for this case to confirm we should add the next chunk to this before parsing
+													// yes confirmed
 													log.error("Chunk Buffer DOES NOT end with newline: " + chunkBuffer)
 													
 													
 												}
 												
 												List<String> chunkList = chunkBuffer.split("\n")
+												
+												List<String> adjChunkList = []
+												
+												// skip empty lines
+												for(s in chunkList) {
+													
+													if(s != "" && s != "\n") {
+							
+														adjChunkList.add(s)
+													}
+												}
+																	
+												chunkList = adjChunkList
 												
 												log.info("ChunkLineCount: " + chunkList.size())
 												
@@ -569,23 +583,6 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 														
 															Map result = parser.parse(data.toCharArray())
 
-															// println "ResultMap: " + result
-
-															try {
-																
-																handler.handleStreamResponse(result)
-																
-																// allow other threads control?
-																// Thread.sleep(100)
-																
-																
-															} catch(Exception ex) {
-																
-																log.error("Exception handling data: " + ex.localizedMessage)
-																	
-															}
-															
-															
 															// "choices":[{"delta":{"content":"."}
 
 															List choices = result["choices"]
@@ -603,6 +600,20 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 																	if(content != null && content != "") {
 
 																		taskPostStatus.completeContent.append(content)
+																		
+																		// log.info("Appending: " + content)
+																		
+																		// log.info( "ResultMap: " + result)
+																		
+																		try {
+																																		
+																			handler.handleStreamResponse(result)
+																																		
+																		} catch(Exception ex) {
+																																		
+																		log.error("Exception handling data: " + ex.localizedMessage)
+																																			
+																		}
 																	}
 																}
 															}
@@ -636,9 +647,7 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 						
 						taskPostStatus.status = "Ok"
 						
-						
 						return taskPostStatus
-						
 						
 					
 					} catch(Exception ex) {
