@@ -41,6 +41,10 @@ class PostStreamingStatus {
 	// "Ok" or "Error"
 	String status = null
 	
+	String statusMessage = null
+	
+	Integer errorCode = 0
+	
 	CloseableHttpResponse httpResponse = null
 	
 	// change to string buffer
@@ -230,12 +234,16 @@ class OpenAIJavaStreamingClient {
 				
 				ChatResponse errorResponse = new ChatResponse()
 					
-				errorResponse.errorMessage = "error"
+				errorResponse.errorMessage = postStatus.statusMessage
 					
 				errorResponse.errorCode = 1
+				
+				if( postStatus.errorCode ) {
+					
+					errorResponse.errorCode = postStatus.errorCode
+				}
 			
 				return errorResponse
-				
 			}
 			
 			// String json_string = EntityUtils.toString( httpResponse.getEntity() )
@@ -638,6 +646,13 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 									
 									// log error?
 									
+									if (statusCode == 429) {
+										
+										log.error("Rate limit Error")
+										
+										throw new RateLimitException("Rate Limit Error. Status code: " + 429)
+										
+									}
 									
 									throw new ClientProtocolException("Unexpected status code: " + statusCode)
 								}
@@ -649,7 +664,16 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 						
 						return taskPostStatus
 						
-					
+					} catch(RateLimitException) {
+						
+						PostStreamingStatus taskPostStatus = new PostStreamingStatus()
+						
+						taskPostStatus.statusMessage = "Rate Limit Error."
+						
+						taskPostStatus.errorCode = 429
+						
+						return taskPostStatus
+							
 					} catch(Exception ex) {
 						
 						log.error("Exception during POST cleanup: " + ex.localizedMessage )
@@ -657,7 +681,9 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 					
 					PostStreamingStatus taskPostStatus = new PostStreamingStatus()
 					
-					taskPostStatus.status = "Error"
+					taskPostStatus.status = "Error during request."
+					
+					taskPostStatus.errorCode = 1
 					
 					return taskPostStatus
 				}
@@ -722,12 +748,19 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 					log.error( "Task had an internal error or an internal timeout." )
 					
 					log.error( "Canceling interrupt timer: " + task.cancel() )
+					
+					// execPostStatus.statusMessage // should have a value
+					// execPostStatus.errorCode // may have a value
+					
 				}
 						
 			} catch(Exception futureException) {
 										
 				log.error("The task may have been interrupted. Exception during future get: " + futureException.localizedMessage )
 					
+				execPostStatus.statusMessage = "Exception during model request."
+				
+				
 				// futureException.printStackTrace()
 			}
 				
@@ -744,13 +777,17 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 			} catch(Exception serviceException) {
 						
 				log.error("Exception during timer and executive service shutdown in status check: " + serviceException.localizedMessage )
-							
+						
+				execPostStatus.statusMessage = "Exception during timer shutdown."
+				
 				// serviceException.printStackTrace()
 			}
 				
 		} catch(Exception ex) {
 			
 			log.error("Unhandled Exception during status check: " + ex.localizedMessage )
+			
+			execPostStatus.statusMessage = "Unhandled Exception during status check."
 			
 		}
 		
