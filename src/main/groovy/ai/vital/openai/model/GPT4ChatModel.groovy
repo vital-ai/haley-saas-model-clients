@@ -56,7 +56,7 @@ class GPT4ChatModel extends AbstractChatModel {
 		return request
 	}
 	
-	
+	@Override
 	public ChatRequest generatePredictionRequest(Chat currentChat) {
 		
 		Map modelParameters = [:]

@@ -53,7 +53,7 @@ class GPT35TurboChatModel extends AbstractChatModel {
 		return request
 	}
 	
-	
+	@Override
 	public ChatRequest generatePredictionRequest(Chat currentChat) {
 		
 		Map modelParameters = [:]
