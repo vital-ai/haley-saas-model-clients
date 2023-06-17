@@ -6,6 +6,7 @@ import ai.vital.openai.api.ChatMessageType
 import ai.vital.openai.api.ChatRequest
 import ai.vital.openai.api.ChatResponse
 import ai.vital.openai.api.OpenAIJavaClient
+import ai.vital.openai.model.GPT35Turbo16KChatModel
 import ai.vital.openai.model.GPT35TurboChatModel
 import ai.vital.openai.model.GPT35Turbo_0301ChatModel
 import com.typesafe.config.Config
@@ -39,7 +40,9 @@ class OpenAIClientChatMain extends groovy.lang.Script {
 
 		// GPT35Turbo_0301ChatModel modelClass = new GPT35Turbo_0301ChatModel()
 		
-		GPT35TurboChatModel modelClass = new GPT35TurboChatModel()
+		// GPT35TurboChatModel modelClass = new GPT35TurboChatModel()
+		
+		GPT35Turbo16KChatModel modelClass = new GPT35Turbo16KChatModel()
 		
 		OpenAIJavaClient modelClient = new OpenAIJavaClient(apiKey, modelClass)
 			

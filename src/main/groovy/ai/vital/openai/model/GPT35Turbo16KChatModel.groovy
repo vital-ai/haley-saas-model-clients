@@ -1,13 +1,16 @@
 package ai.vital.openai.model
 
 import ai.vital.openai.api.Chat
+import ai.vital.openai.api.ChatRequest
+import ai.vital.openai.api.Chat
 import ai.vital.openai.api.ChatMessage
 import ai.vital.openai.api.ChatMessageType
 import ai.vital.openai.api.ChatRequest
 
-class GPT35TurboChatModel extends AbstractChatModel {
+
+class GPT35Turbo16KChatModel extends AbstractChatModel {
 	
-	static String modelName = "gpt-3.5-turbo"
+	static String modelName = "gpt-3.5-turbo-16k"
 	
 	static String modelVersion = ""
 
