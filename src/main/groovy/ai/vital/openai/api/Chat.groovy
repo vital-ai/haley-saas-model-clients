@@ -8,6 +8,7 @@ class Chat {
 	
 	List<ChatMessage> chatMessageList = null
 	
+	List<ChatFunction> chatFunctionList = null
 	
 	
 }

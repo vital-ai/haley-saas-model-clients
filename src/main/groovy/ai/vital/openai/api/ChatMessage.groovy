@@ -4,6 +4,11 @@ class ChatMessage {
 	
 	ChatMessageType messageType
 	
+	String name
+	
 	String messageText
+	
+	Map functionCall
+	
 	
 }

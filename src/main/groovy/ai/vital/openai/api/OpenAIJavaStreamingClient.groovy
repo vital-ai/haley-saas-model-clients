@@ -32,6 +32,7 @@ import groovy.json.JsonOutput
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+
 // Utility class for capturing the results of a Post
 // TODO potentially use something like this to return partial results
 // for case of returning streaming results incrementally
@@ -51,6 +52,8 @@ class PostStreamingStatus {
 	
 	StringBuffer completeContent = new StringBuffer()
 	
+	Date lastUpdateTime = new Date()
+	
 }
 
 
@@ -60,6 +63,7 @@ public interface StreamResponseHandler {
 	
 	}
 
+	
 
 // Main client
 class OpenAIJavaStreamingClient {
@@ -84,6 +88,9 @@ class OpenAIJavaStreamingClient {
 		
 	String apiKey = null
 	
+	PostQueue postQueue = new PostQueue()
+	
+	
 	// TODO capture which models support which endpoints in the
 	// model class, then check that value in prediction calls
 	
@@ -99,6 +106,8 @@ class OpenAIJavaStreamingClient {
 		
 	TextCompletionResponse generatePrediction(TextCompletionRequest request, StreamResponseHandler handler, Integer timeout_ms) {
 				
+		String requestIdentifier = request.requestIdentifier
+		
 		request.parameterMap.stream = true
 		
 		CloseableHttpClient httpclient = null
@@ -123,7 +132,7 @@ class OpenAIJavaStreamingClient {
 			
 			// CloseableHttpResponse httpResponse = httpclient.execute(httppost)
 			
-			PostStreamingStatus postStatus = execPost(httpclient, httppost, handler, timeout_ms)
+			PostStreamingStatus postStatus = execPost(requestIdentifier, httpclient, httppost, handler, timeout_ms)
 			
 			// CloseableHttpResponse httpResponse = postStatus.httpResponse
 	
@@ -198,6 +207,8 @@ class OpenAIJavaStreamingClient {
 	
 	ChatResponse generatePrediction(ChatRequest request, StreamResponseHandler handler, Integer timeout_ms) {
 		
+		String requestIdentifier = request.requestIdentifier
+		
 		request.parameterMap.stream = true
 		
 		CloseableHttpClient httpclient = null
@@ -224,7 +235,7 @@ class OpenAIJavaStreamingClient {
 			
 			httppost.setHeader("Content-type", "application/json")
 			
-			PostStreamingStatus postStatus = execPost(httpclient, httppost, handler, timeout_ms)
+			PostStreamingStatus postStatus = execPost(requestIdentifier, httpclient, httppost, handler, timeout_ms)
 					
 			// CloseableHttpResponse httpResponse = postStatus.httpResponse
 			
@@ -233,7 +244,21 @@ class OpenAIJavaStreamingClient {
 				log.error( "Exception: POST Failed" )
 				
 				ChatResponse errorResponse = new ChatResponse()
+				
+				// errorResponse.chatMessage = postStatus.completeContent.toString()
 					
+				String text = postStatus.completeContent.toString() // result.choices[0].message.content.trim()
+				
+				log.info ("Error: Generated Chat Text:\n" + text )
+	
+				ChatMessage chatMessage = new ChatMessage()
+	
+				chatMessage.messageText = text
+
+				chatMessage.messageType = ChatMessageType.BOT
+		
+				errorResponse.chatMessage = chatMessage
+						
 				errorResponse.errorMessage = postStatus.statusMessage
 					
 				errorResponse.errorCode = 1
@@ -302,6 +327,37 @@ class OpenAIJavaStreamingClient {
 		return errorResponse
 	}
 	
+	
+	ChatResponse cancelPrediction(String requestIdentifier) {
+	
+		log.info("Cancel Prediction.  Checking for Request: " + requestIdentifier)
+		
+		PostStreamingStatus streamingStatus = postQueue.stopPost(requestIdentifier)
+
+		if(streamingStatus == null) {
+			
+			return null
+			
+		}
+		
+		String text = streamingStatus.completeContent.toString() // result.choices[0].message.content.trim()
+		
+		log.info("Canceled --- Current Generated Chat Text:\n" + text )
+
+		ChatMessage chatMessage = new ChatMessage()
+
+		chatMessage.messageText = text
+
+		chatMessage.messageType = ChatMessageType.BOT
+	
+		ChatResponse response = new ChatResponse()
+
+		response.chatMessage = chatMessage
+		
+		return response
+			
+	}
+	
 	CodeCompletionResponse generatePrediction(CodeCompletionRequest request, StreamResponseHandler handler, Integer timeout_ms) {
 	
 	
@@ -316,6 +372,8 @@ class OpenAIJavaStreamingClient {
 	
 	TranscriptionResponse generatePrediction(TranscriptionRequest request, StreamResponseHandler handler, Integer timeout_ms) {
 	
+		String requestIdentifier = request.requestIdentifier
+		
 		request.parameterMap.stream = true
 		
 		CloseableHttpClient httpclient = null
@@ -364,7 +422,7 @@ class OpenAIJavaStreamingClient {
 			
 			// CloseableHttpResponse httpResponse = httpclient.execute(httppost)
 
-			PostStreamingStatus postStatus = execPost(httpclient, httppost, handler, timeout_ms)
+			PostStreamingStatus postStatus = execPost(requestIdentifier, httpclient, httppost, handler, timeout_ms)
 			
 			// CloseableHttpResponse httpResponse = postStatus.httpResponse
 	
@@ -430,8 +488,6 @@ class OpenAIJavaStreamingClient {
 		return errorResponse
 	}
 	
-	// This is overkill for a single post but potentially needed
-	// for supporting more complex scenarios like getting streaming results back
 	
 	// TODO pass in a task id such that the id can be used to kill the task as it's running
 	// keep a map of id --> task for the instance of the client
@@ -491,31 +547,152 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 	// the JSON can be split across "data" lines.
 	// how to buffer and recombine into valid json data?
 	
-
-		
 	
-	
-	PostStreamingStatus execPost(CloseableHttpClient httpclient, HttpPost httppost, StreamResponseHandler handler, Integer timeout_ms) {
+	class PostQueue {
 		
-		// by default assume error
-		// gets replaced if successful
-		PostStreamingStatus execPostStatus = new PostStreamingStatus()
+		List<PostCallable> postList = []
 		
-		execPostStatus.status = "Error"
+		PostQueue() {
 		
-		try {
-		
-			// Potentially used shared thread pool instead of one at a time
-			ExecutorService executorService = Executors.newFixedThreadPool(1)
-		
-			def r = new Callable() {
+			TimerTask cleanTask = new TimerTask() {
 				
-				public Object call() throws Exception {
+				public void run() {
+				
+					log.info( "Running Post Clean Task Check." )
+					
+					List<PostCallable> removeList = []
+					
+					for(p in postList) {
+						
+						if(p.future.isCancelled()) {
+							
+							removeList.add(p)
+							
+						}
+						
+						if(p.future.isDone()) {
+							
+							removeList.add(p)
+							
+						}
+					}
+					
+					for(r in removeList) {
+						
+						postList.remove(r)
+					}		
+				}
+			}
+			
+			Timer cleanTimer = new Timer("Post Clean Timer");
+			
+			long cleanTime = 10_000L
+				
+			cleanTimer.schedule(cleanTask, 0, cleanTime)
+		}
+		
+		public void addPost(PostCallable post) {
+			
+			postList.add(post)
+			
+		}
+		
+		public PostStreamingStatus stopPost(String requestIdentifier) {
+			
+			for(p in postList) {
+				
+				String id = p.requestIdentifier
+				
+				log.info("Compare: ${requestIdentifier} to ${id}")
+				
+				if(id == requestIdentifier) {
+					
+					PostStreamingStatus postStatus = p.getStatus()
+					
+					p.stopPost()
+					
+					return postStatus
+				}
+			}
+			
+			return null
+			
+		}
+	}
+
+	class PostCallable implements Callable {
+
+		String requestIdentifier = null
+		
+		CloseableHttpClient httpclient = null
+		
+		HttpPost httppost = null
+		
+		StreamResponseHandler handler = null
+		
+		Future<String> future = null
+		
+		boolean interrupted = false
+		
+		PostCallable(String requestIdentifier, CloseableHttpClient httpclient, HttpPost httppost, StreamResponseHandler handler) {
+			this.requestIdentifier = requestIdentifier
+			this.httpclient = httpclient
+			this.httppost = httppost
+			this.handler = handler
+		}
+		
+		PostStreamingStatus taskPostStatus = new PostStreamingStatus()
+		
+		public PostStreamingStatus getStatus() {
+			
+			return taskPostStatus	
+		}
+		
+		public void stopPost() {
+			
+			log.info("Attempting Cancel of: " + requestIdentifier) 
+			
+			
+			synchronized(this) {
+				
+				interrupted = true
+				
+			}
+			
+			
+			if(future != null) {
+			
+				if(!future.isDone()) {
+				
+					log.error( "Task is not done. initiating interrupt.")
+				
+					future.cancel(true)
+				
+					// cleanup
+				
+					try {
+				
+						log.error( "starting cleanup after status check timeout..." )
+					
+					} catch( Exception cleanupException) {
+							
+						log.error("Exception during status check cleanup: " + cleanupException.localizedMessage )
+					
+						// cleanupException.printStackTrace()
+					}
+				}
+				else {
+				
+					// println "Task is already complete."
+				}
+			}
+		}
+		
+		@Override
+		public Object call() throws Exception {
 			
 					try {
-					
-						PostStreamingStatus taskPostStatus = new PostStreamingStatus()
-											
+										
 						httpclient.execute(httppost, new ResponseHandler<Void>() {
 							
 							@Override
@@ -537,29 +714,57 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 											
 											int bytesRead
 											
+											// TODO change to keep reading until newline on separate line?
+											// fully support Server Sent Events
+											
+											String chunkBuffer = ""
+											
 											while ((bytesRead = inputStream.read(buffer)) != -1) {
 												
-												String chunkBuffer = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8)
+												String newChunkBuffer = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8)
 												
-												log.info("DATA: " + chunkBuffer)
+												if(!interrupted) {
+												
+													log.info("DATA: " + newChunkBuffer)
+												} else {
+													
+													log.info("DATA INTERRUPTED: " + newChunkBuffer)
+												}
 												
 												// DATA: data: {"id":"chatcmpl-6xJrz7Z6nKtEoNeiUEcHjxb61weK2","object":"chat.completion.chunk","created":1679595751,"model":"gpt-4-0314","choices":[{"delta":{"content":"."},"index":0,"finish_reason":null}]}
 
-												if(chunkBuffer.endsWith("\n")) {
+												boolean processBuffer = true
+												
+												chunkBuffer = chunkBuffer + newChunkBuffer
+												
+												if(newChunkBuffer.endsWith("\n")) {
 													
 													log.info("Chunk Buffer ends with newline: " + chunkBuffer)
-													
+														
+													processBuffer = true
+														
 												}
 												else {
 													
-													// check for this case to confirm we should add the next chunk to this before parsing
-													// yes confirmed
-													log.error("Chunk Buffer DOES NOT end with newline: " + chunkBuffer)
+													// check for this case to confirm we should add the next chunk to this before trying to parse
 													
+													log.error("Chunk Buffer DOES NOT end with newline: " + newChunkBuffer)
 													
+													processBuffer = false
+												}
+												
+												// don't process when the line is split
+												if(!processBuffer) {
+													
+													log.info("Not processing event yet.  Chunk Buffer DOES NOT end with newline: " + chunkBuffer)
+													
+													continue
 												}
 												
 												List<String> chunkList = chunkBuffer.split("\n")
+												
+												// reset for next time
+												chunkBuffer = ""
 												
 												List<String> adjChunkList = []
 												
@@ -571,7 +776,7 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 														adjChunkList.add(s)
 													}
 												}
-																	
+																
 												chunkList = adjChunkList
 												
 												log.info("ChunkLineCount: " + chunkList.size())
@@ -609,13 +814,20 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 
 																		taskPostStatus.completeContent.append(content)
 																		
+																		taskPostStatus.lastUpdateTime = new Date()
+																		
 																		// log.info("Appending: " + content)
 																		
 																		// log.info( "ResultMap: " + result)
 																		
 																		try {
+																			
+																			if(!interrupted) {
 																																		
-																			handler.handleStreamResponse(result)
+																				handler.handleStreamResponse(result)
+																			
+																			}
+																			
 																																		
 																		} catch(Exception ex) {
 																																		
@@ -636,9 +848,18 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 												}
 											}
 											}
+											
+											
 										} catch(Exception ex) {
 											
-											ex.printStackTrace()
+											if(interrupted) {
+												log.info("Interrupted (Expected): Exception reading from stream: " + ex.localizedMessage)
+											} else {
+											
+												log.error("Exception reading from stream: " + ex.localizedMessage)
+											}
+											
+											// ex.printStackTrace()
 										}
 									
 									}
@@ -651,7 +872,6 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 										log.error("Rate limit Error")
 										
 										throw new RateLimitException("Rate Limit Error. Status code: " + 429)
-										
 									}
 									
 									throw new ClientProtocolException("Unexpected status code: " + statusCode)
@@ -687,11 +907,35 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 					
 					return taskPostStatus
 				}
-			}
 		
+		
+		
+	}
+	
+	
+		
+	PostStreamingStatus execPost(String requestIdentifier, CloseableHttpClient httpclient, HttpPost httppost, StreamResponseHandler handler, Integer timeout_ms) {
+		
+		// by default assume error
+		// gets replaced if successful
+		PostStreamingStatus execPostStatus = new PostStreamingStatus()
+		
+		execPostStatus.status = "Error"
+		
+		try {
+		
+			// Potentially used shared thread pool instead of one at a time
+			ExecutorService executorService = Executors.newFixedThreadPool(1)
+		
+			def r = new PostCallable(requestIdentifier, httpclient, httppost, handler)
+		
+			postQueue.addPost(r)
+			
 			// start the post
 			Future<String> future  = executorService.submit( r )
 		
+			r.future = future
+			
 			TimerTask task = new TimerTask() {
 				
 				public void run() {
@@ -734,6 +978,63 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 			
 			timer.schedule(task, timeout)
 	
+			TimerTask progressTask = new TimerTask() {
+				
+				public void run() {
+				
+					log.error( "Running Progress Check." )
+					
+					if(!future.isDone()) {
+						
+						log.error( "Task is not done. Checking progress.")
+						
+						boolean progress = true
+						
+						PostStreamingStatus postStatus = r.getStatus()
+						
+						Date now = new Date()
+						
+						Date lastTime = postStatus.lastUpdateTime
+						
+						long delta_ms = now.getTime() - lastTime.getTime()
+						
+						if(delta_ms > 15_000) {
+							
+							progress = false
+							
+						}
+						
+						if(!progress) {
+						
+							future.cancel(true)
+						
+							// cleanup
+						
+							try {
+						
+								log.error( "starting cleanup after progress check timeout..." )
+						
+							} catch( Exception cleanupException) {
+									
+								log.error("Exception during progress check cleanup: " + cleanupException.localizedMessage )
+							
+								// cleanupException.printStackTrace()
+							}
+						}
+					}
+					else {
+						
+						// println "Task is already complete."
+					}
+				}
+			}
+			
+			Timer progressTimer = new Timer("Progress Interruption Timer");
+			
+			long progressTime = 10_000L // 60000L
+				
+			progressTimer.schedule(progressTask, 0, progressTime)
+				
 			try {
 				
 				// wait here until the Post completes or the timer interrupts it
@@ -760,13 +1061,28 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 					
 				execPostStatus.statusMessage = "Exception during model request."
 				
-				
+				if(r.interrupted == true) {
+					
+					log.error("The task was interrupted by the user." )
+					
+					// Treat as not an error
+					execPostStatus = r.getStatus()
+					
+					execPostStatus.status = "Ok"
+					
+					execPostStatus.statusMessage = "Task was interrupted by user."
+				}
+								
 				// futureException.printStackTrace()
 			}
-				
+			
+			
+			
 			try {
 					
-				timer.cancel() // need to kill timer thread
+				progressTimer.cancel() // kill progress checker
+				
+				timer.cancel() // need to kill time out thread
 					
 				executorService.shutdown() // need to close threads
 				
@@ -782,19 +1098,16 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 				
 				// serviceException.printStackTrace()
 			}
-				
+
 		} catch(Exception ex) {
 			
 			log.error("Unhandled Exception during status check: " + ex.localizedMessage )
 			
 			execPostStatus.statusMessage = "Unhandled Exception during status check."
-			
 		}
 		
 		// returns error case with null response if error
 		return execPostStatus
-	
 	}
-
-
+	
 }
