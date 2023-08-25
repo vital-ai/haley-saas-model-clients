@@ -8,7 +8,7 @@ class ChatMessage {
 	
 	String messageText
 	
-	Map functionCall
+	ChatFunctionCall functionCall
 	
 	
 }

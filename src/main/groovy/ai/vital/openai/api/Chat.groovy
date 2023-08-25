@@ -10,5 +10,7 @@ class Chat {
 	
 	List<ChatFunction> chatFunctionList = null
 	
+	String function_call
+	
 	
 }

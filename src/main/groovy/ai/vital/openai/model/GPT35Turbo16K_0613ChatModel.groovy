@@ -1,19 +1,17 @@
 package ai.vital.openai.model
 
 import ai.vital.openai.api.Chat
+import ai.vital.openai.api.ChatRequest
 import ai.vital.openai.api.ChatMessage
 import ai.vital.openai.api.ChatMessageType
-import ai.vital.openai.api.ChatRequest
-import ai.vital.openai.api.ModelRequest
-import ai.vital.openai.api.TextCompletionRequest
+import ai.vital.openai.api.ChatFunction
 
-
-class GPT4ChatModel extends AbstractChatModel {
-
-	static String modelName = "gpt-4"
+class GPT35Turbo16K_0613ChatModel extends AbstractChatModel {
 	
-	static String modelVersion = ""
+	static String modelName = "gpt-3.5-turbo-16k"
 	
+	static String modelVersion = "0613"
+
 	@Override
 	public String getModelName() {
 		
@@ -25,8 +23,7 @@ class GPT4ChatModel extends AbstractChatModel {
 		
 		return modelVersion
 	}
-
-		
+	
 	@Override
 	public Map<String, Object> getParameterMap() {
 		
@@ -36,8 +33,7 @@ class GPT4ChatModel extends AbstractChatModel {
 			
 		return p
 	}
-	
-	
+		
 	@Override
 	public ChatRequest generatePredictionRequest(Map parameters) {
 		
@@ -86,7 +82,7 @@ class GPT4ChatModel extends AbstractChatModel {
 			
 			if(messageType == ChatMessageType.USER) {
 				
-				roleString = "user"
+				roleString = "user"	
 			}
 			
 			if(messageType == ChatMessageType.BOT) {
@@ -110,6 +106,41 @@ class GPT4ChatModel extends AbstractChatModel {
 		]
 		
 		messageList.add(userMap)
+		
+		if( currentChat.function_call != null) {
+			
+			modelParameters["function_call"] = [ "name" : currentChat.function_call ]
+		}
+		
+		if(currentChat.chatFunctionList != null && currentChat.chatFunctionList.size()> 0) {
+		
+		List<Map> functionList = []
+		
+		for(ChatFunction function in currentChat.chatFunctionList ) {
+							
+			Map parameterMap = [:]
+			
+			parameterMap["type"] = "object"
+			
+			parameterMap["properties"] = function.parameterMap
+			
+			parameterMap["required"] = function.requiredParameterList
+			
+			Map functionMap = [:]
+			
+			functionMap["name"] = function.name
+			
+			functionMap["description"] = function.description
+		
+			functionMap["parameters"] = parameterMap
+			
+			functionList.add(functionMap)
+			
+		}
+				
+		modelParameters["functions"] = functionList
+	
+		}
 		
 		
 		return generatePredictionRequest(modelParameters)

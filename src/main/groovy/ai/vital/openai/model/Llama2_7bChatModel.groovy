@@ -5,12 +5,10 @@ import ai.vital.openai.api.ChatMessage
 import ai.vital.openai.api.ChatMessageType
 import ai.vital.openai.api.ChatRequest
 import ai.vital.openai.api.ModelRequest
-import ai.vital.openai.api.TextCompletionRequest
 
+class Llama2_7bChatModel extends AbstractChatModel {
 
-class GPT4ChatModel extends AbstractChatModel {
-
-	static String modelName = "gpt-4"
+	static String modelName = "meta-llama/Llama-2-7b-chat-hf"
 	
 	static String modelVersion = ""
 	
@@ -25,8 +23,7 @@ class GPT4ChatModel extends AbstractChatModel {
 		
 		return modelVersion
 	}
-
-		
+	
 	@Override
 	public Map<String, Object> getParameterMap() {
 		
@@ -36,7 +33,6 @@ class GPT4ChatModel extends AbstractChatModel {
 			
 		return p
 	}
-	
 	
 	@Override
 	public ChatRequest generatePredictionRequest(Map parameters) {

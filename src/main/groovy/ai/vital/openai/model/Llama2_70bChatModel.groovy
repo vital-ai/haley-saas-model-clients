@@ -5,12 +5,11 @@ import ai.vital.openai.api.ChatMessage
 import ai.vital.openai.api.ChatMessageType
 import ai.vital.openai.api.ChatRequest
 import ai.vital.openai.api.ModelRequest
-import ai.vital.openai.api.TextCompletionRequest
 
 
-class GPT4ChatModel extends AbstractChatModel {
+class Llama2_70bChatModel extends AbstractChatModel {
 
-	static String modelName = "gpt-4"
+	static String modelName = "meta-llama/Llama-2-70b-chat-hf"
 	
 	static String modelVersion = ""
 	

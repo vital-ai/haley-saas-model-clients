@@ -6,6 +6,9 @@ class ChatFunction {
 	
 	String description
 	
-	List<Map> chatFunctionParameterList
+	Map parameterMap
+	
+	List<String> requiredParameterList
+	
 	
 }
