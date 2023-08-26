@@ -9,3 +9,6 @@ outputImages/*.png
 config/*.config
 config/*.conf
 
+**/.DS_Store
+
+
