@@ -32,11 +32,13 @@ import ai.haley.saas.model.clients.api.ChatRequest
 import ai.haley.saas.model.clients.api.ChatResponse
 import ai.haley.saas.model.clients.api.CodeCompletionRequest
 import ai.haley.saas.model.clients.api.CodeCompletionResponse
+import ai.haley.saas.model.clients.api.CommandModeEnum
 import ai.haley.saas.model.clients.api.ImageGenerationRequest
 import ai.haley.saas.model.clients.api.ImageGenerationResponse
 import ai.haley.saas.model.clients.api.PostStreamingStatus
 import ai.haley.saas.model.clients.api.RateLimitException
 import ai.haley.saas.model.clients.api.StreamResponseHandler
+import ai.haley.saas.model.clients.api.TestModeEnum
 import ai.haley.saas.model.clients.api.TextCompletion
 import ai.haley.saas.model.clients.api.TextCompletionRequest
 import ai.haley.saas.model.clients.api.TextCompletionResponse
@@ -229,7 +231,12 @@ class OpenAIJavaStreamingClient {
 				
 	}
 	
-	ChatResponse generatePrediction(ChatRequest request, StreamResponseHandler handler, Integer timeout_ms) {
+	ChatResponse generatePrediction(
+		ChatRequest request, 
+		StreamResponseHandler handler, 
+		Integer timeout_ms, 
+		CommandModeEnum commandMode = CommandModeEnum.STANDARD,
+		TestModeEnum testMode = TestModeEnum.NONE) {
 		
 		String requestIdentifier = request.requestIdentifier
 		
@@ -1062,6 +1069,7 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 			try {
 				
 				// wait here until the Post completes or the timer interrupts it
+				
 				execPostStatus = future.get()
 					
 				if(execPostStatus.status == "Ok") {
@@ -1116,7 +1124,7 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 					
 			} catch(Exception serviceException) {
 						
-				log.error("Exception during timer and executive service shutdown in status check: " + serviceException.localizedMessage )
+				log.error("Exception during timer and executor service shutdown in status check: " + serviceException.localizedMessage )
 						
 				execPostStatus.statusMessage = "Exception during timer shutdown."
 				

@@ -25,22 +25,21 @@ import org.apache.http.HttpEntity
 import org.apache.http.HttpResponse
 import org.apache.http.NameValuePair
 import org.apache.http.util.EntityUtils
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import ai.haley.saas.model.clients.api.ChatMessageType
-
 import ai.haley.saas.model.clients.api.ChatMessage
 import ai.haley.saas.model.clients.api.ChatRequest
 import ai.haley.saas.model.clients.api.ChatResponse
+import ai.haley.saas.model.clients.api.CommandModeEnum
 import ai.haley.saas.model.clients.api.PostStreamingStatus
 import ai.haley.saas.model.clients.api.RateLimitException
 import ai.haley.saas.model.clients.api.StreamResponseHandler
+import ai.haley.saas.model.clients.api.TestModeEnum
 import ai.haley.saas.model.clients.model.AbstractModel
 import groovy.json.JsonOutput
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
 
 // Main client
 class AnyscaleJavaStreamingClient {
@@ -73,8 +72,12 @@ class AnyscaleJavaStreamingClient {
 				
 	}
 		
-	
-	ChatResponse generatePrediction(ChatRequest request, StreamResponseHandler handler, Integer timeout_ms) {
+	ChatResponse generatePrediction(
+		ChatRequest request, 
+		StreamResponseHandler handler, 
+		Integer timeout_ms,
+		CommandModeEnum commandMode = CommandModeEnum.STANDARD,
+		TestModeEnum testMode = TestModeEnum.NONE) {
 		
 		String requestIdentifier = request.requestIdentifier
 		

@@ -42,10 +42,10 @@ class AnyscaleStreamingClientLlama270bMain extends groovy.lang.Script {
 		apiKey = conf.getString("apiKey")
 		
 		// Model to use
-		// Llama2_70bChatModel modelClass = new Llama2_70bChatModel()
+		Llama2_70bChatModel modelClass = new Llama2_70bChatModel()
 		
 		
-		CodeLlama2_34bChatModel modelClass = new CodeLlama2_34bChatModel()
+		// CodeLlama2_34bChatModel modelClass = new CodeLlama2_34bChatModel()
 		
 		
 		
@@ -68,16 +68,16 @@ class AnyscaleStreamingClientLlama270bMain extends groovy.lang.Script {
 			
 		Chat currentChat = new Chat()
 		
-		// currentChat.systemPrompt = "You are named Haley, and you are a brilliant author of children's stories. In your stories, you follow Dan Harmon's story circle."
+		currentChat.systemPrompt = "You are named Haley, and you are a brilliant author of children's stories. In your stories, you follow Dan Harmon's story circle."
 	
-		currentChat.systemPrompt = "You are named Haley, and you are a brilliant software engineer."
+		// currentChat.systemPrompt = "You are named Haley, and you are a brilliant software engineer."
 		
 		
 		ChatMessage cm1 = new ChatMessage()
 		
-		// cm1.messageText = "Hi, my name is Haley! I'm here to assist you write children's stories."
+		cm1.messageText = "Hi, my name is Haley! I'm here to assist you write children's stories."
 			
-		cm1.messageText = "Hi, my name is Haley! I'm here to assist you write software."
+		// cm1.messageText = "Hi, my name is Haley! I'm here to assist you write software."
 		
 		
 		cm1.messageType = ChatMessageType.BOT
@@ -86,20 +86,21 @@ class AnyscaleStreamingClientLlama270bMain extends groovy.lang.Script {
 		
 		String stateName = "New Jersey"
 		
-		/*
+		
 		String promptString = """
 Write a short story set in ${stateName}.
 The story should be about a monkey who saves the world by being very brave and smart.
 The story has a twist ending.
 Each part of the story circle should have a separate paragraph.
 """.trim().replaceAll("\n","\\\\n")
-		*/
 		
-			
+		
+		/*	
 		String promptString = """
 		Write an implementation of the RSA algorithm in Java and explain how it works.
 		""".trim().replaceAll("\n","\\\\n")
-			
+		*/
+	
 		
 			
 		ChatMessage userChatMessage = new ChatMessage()

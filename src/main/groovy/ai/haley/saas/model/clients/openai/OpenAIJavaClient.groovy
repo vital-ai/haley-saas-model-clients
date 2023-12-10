@@ -620,7 +620,7 @@ class OpenAIJavaClient {
 					
 			} catch(Exception serviceException) {
 						
-				log.error("Exception during timer and executive service shutdown in status check: " + serviceException.localizedMessage )
+				log.error("Exception during timer and executor service shutdown in status check: " + serviceException.localizedMessage )
 							
 				// serviceException.printStackTrace()
 			}

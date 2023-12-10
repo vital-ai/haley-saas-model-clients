@@ -39,7 +39,7 @@ class AnyscaleClientChatMain extends groovy.lang.Script {
 		apiKey = conf.getString("apiKey")
 
 	
-		Llama2_13bChatModel modelClass = new Llama2_13bChatModel()
+		Llama2_70bChatModel modelClass = new Llama2_70bChatModel()
 					
 		AnyscaleJavaClient modelClient = new AnyscaleJavaClient(apiKey, modelClass)
 			

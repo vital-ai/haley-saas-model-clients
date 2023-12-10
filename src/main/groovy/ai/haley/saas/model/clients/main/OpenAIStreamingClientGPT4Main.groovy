@@ -12,11 +12,9 @@ import ai.haley.saas.model.clients.api.TextCompletionResponse
 import ai.haley.saas.model.clients.model.GPT4ChatModel
 import ai.haley.saas.model.clients.openai.OpenAIJavaClient
 import ai.haley.saas.model.clients.openai.OpenAIJavaStreamingClient
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.BasicConfigurator
-
 
 class OpenAIStreamingClientGPT4Main extends groovy.lang.Script {
 
@@ -45,8 +43,7 @@ class OpenAIStreamingClientGPT4Main extends groovy.lang.Script {
 		
 		// Model to use
 		GPT4ChatModel modelClass = new GPT4ChatModel()
-		
-		
+				
 		StreamResponseHandler handler = new StreamResponseHandler() {
 	
 			@Override
@@ -54,14 +51,11 @@ class OpenAIStreamingClientGPT4Main extends groovy.lang.Script {
 				
 				
 				println "HandleData: " + dataMap
-				
-				
+						
 			}
 	
 		}
 		
-		
-			
 		OpenAIJavaStreamingClient modelClient = new OpenAIJavaStreamingClient(apiKey, modelClass)
 			
 		Chat currentChat = new Chat()
@@ -104,9 +98,9 @@ Each part of the story circle should have a separate paragraph.
 			System.exit(1)
 		}
 		
-		String messageText = response.chatMessage.messageText
-		
 		String messageType = response.chatMessage.messageType
+		
+		String messageText = response.chatMessage.messageText
 		
 		println "${messageType}: ${messageText}"
 	
@@ -114,7 +108,10 @@ Each part of the story circle should have a separate paragraph.
 		currentChat.chatMessageList.add(userChatMessage)
 		
 		currentChat.chatMessageList.add(response.chatMessage)
-		
 			
+		
+		System.exit(0)
+		
+		
 	}
 }
