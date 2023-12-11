@@ -490,6 +490,9 @@ class OpenAIJavaStreamingClient {
 			
 		// should not get here
 		
+		log.error( "Error: Unexpected Error during OpenAI Call.")
+		
+		
 		ChatResponse errorResponse = new ChatResponse()
 		
 		errorResponse.errorMessage = "error"
