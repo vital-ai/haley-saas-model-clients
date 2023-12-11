@@ -71,6 +71,20 @@ class AnyscaleJavaStreamingClient {
 		this.modelVersion = model.getModelVersion()
 				
 	}
+	
+	
+	static String testStaticContent = ""
+	
+	public static void setTestStaticContent(String staticContent) {
+		
+		testStaticContent = staticContent
+	}
+	
+	public static String getTestStaticContent() {
+		
+		return testStaticContent
+	}
+	
 		
 	ChatResponse generatePrediction(
 		ChatRequest request, 

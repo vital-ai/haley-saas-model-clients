@@ -49,9 +49,7 @@ class OpenAIStreamingClientGPT4Main extends groovy.lang.Script {
 			@Override
 			void handleStreamResponse(Map dataMap) {
 				
-				
-				println "HandleData: " + dataMap
-						
+				println "HandleData: " + dataMap		
 			}
 	
 		}

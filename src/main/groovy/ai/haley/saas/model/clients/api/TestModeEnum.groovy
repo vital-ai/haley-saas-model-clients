@@ -6,6 +6,9 @@ enum TestModeEnum {
 	// return an API Error
 	API_ERROR,
 	
+	// return an authentication error
+	AUTH_ERROR,
+	
 	// API Request will be interrupted, 
 	INTERRUPT,
 	

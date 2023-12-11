@@ -116,6 +116,18 @@ class OpenAIJavaStreamingClient {
 	
 	PostQueue postQueue = new PostQueue()
 	
+	static String testStaticContent = ""
+	
+	public static void setTestStaticContent(String staticContent) {
+		
+		testStaticContent = staticContent
+	}
+	
+	public static String getTestStaticContent() {
+		
+		return testStaticContent
+	}
+	
 	
 	// TODO capture which models support which endpoints in the
 	// model class, then check that value in prediction calls
@@ -227,8 +239,7 @@ class OpenAIJavaStreamingClient {
 		
 		errorResponse.errorCode = 1
 
-		return errorResponse
-				
+		return errorResponse		
 	}
 	
 	ChatResponse generatePrediction(
@@ -237,6 +248,136 @@ class OpenAIJavaStreamingClient {
 		Integer timeout_ms, 
 		CommandModeEnum commandMode = CommandModeEnum.STANDARD,
 		TestModeEnum testMode = TestModeEnum.NONE) {
+		
+		if( commandMode == CommandModeEnum.TEST || commandMode == CommandModeEnum.EPHEMERAL_TEST) {
+			
+			if(testMode == TestModeEnum.STATIC_CONTENT) {
+				
+				// data: {"id":"chatcmpl-8ULALpIGIUw2fxXqBdeYg8PwJUueT","object":"chat.completion.chunk","created":1702241893,"model":"gpt-4-0613","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":" was"},"finish_reason":null}]}
+				// "choices":[{"index":0,"delta":{"content":" was"},"finish_reason":null}]
+
+				UUID id = UUID.randomUUID()
+				
+				String idString = id.toString()
+				
+				String[] lines = testStaticContent.split("\n")
+				
+				for(String line in lines) {
+					
+					List<String> chunks = []
+					
+					def words = line.split(/(?<=\b|\s)/)
+					
+					int wordCount = 0
+					StringBuilder chunkBuilder = new StringBuilder()
+					
+					words.each { word ->
+						chunkBuilder.append(word)
+						if (word.trim()) {
+							wordCount++
+						}
+						if (wordCount == 3 || words[-1] == word) {
+							chunks.add(chunkBuilder.toString())
+							chunkBuilder.setLength(0) // Reset for next chunk
+							wordCount = 0
+						}
+					}
+					
+					String reassembled = chunks.join('')
+					
+					if(line != reassembled) {
+						
+					 log.error( "Error in splitting static content into tokens.")
+					 	
+					}
+					
+					for(c in chunks) {
+						
+						Map dataMap = [:]
+						
+						dataMap["id"] = idString
+		
+						dataMap["object"] = "chat.completion.chunk"
+						
+						Date now = new Date()
+						
+						dataMap["created"] = now.time
+						
+						dataMap["model"] = "gpt-4-0613"
+						
+						Map choice = [
+							"index": 0,
+							"finish_reason": null,
+							"delta": ["content": c ]
+						]
+						
+						List choiceList = [ choice ]
+						
+						dataMap["choices"] = choiceList
+						
+						handler.handleStreamResponse(dataMap)
+						
+						Random random = new Random()
+						
+						int randomInteger = random.nextInt(251) + 50
+						
+						Thread.sleep(100 + randomInteger)	
+					}					
+				}
+				
+				log.info ("Generated Chat Text:\n" + testStaticContent )
+				
+				ChatMessage chatMessage = new ChatMessage()
+				
+				chatMessage.messageText = testStaticContent
+			
+				chatMessage.messageType = ChatMessageType.BOT
+						
+				ChatResponse response = new ChatResponse()
+				
+				response.chatMessage = chatMessage
+							
+				return response
+			}
+		
+			// return static info and interrupt with api error
+			if(testMode == TestModeEnum.API_ERROR) {
+			
+			
+			
+			}
+			
+			if(testMode == TestModeEnum.RATE_LIMIT) {
+			
+			
+			
+			}
+			
+			
+			
+			if(testMode == TestModeEnum.TIMEOUT) {
+			
+			
+			
+			}
+			
+			// shouldn't happen
+			if(testMode == TestModeEnum.NONE) {
+			
+			
+			
+			}
+			
+			// do a normal API call but expect to be interrupted
+			if(testMode == TestModeEnum.INTERRUPT) {
+			
+			
+			
+			}
+			
+		}
+		
+		
 		
 		String requestIdentifier = request.requestIdentifier
 		
@@ -757,6 +898,7 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 												if(!interrupted) {
 												
 													log.info("DATA: " + newChunkBuffer)
+													
 												} else {
 													
 													log.info("DATA INTERRUPTED: " + newChunkBuffer)
@@ -856,7 +998,6 @@ ces":[{"delta":{"content":" This"},"index":0,"finish_reason":null}]}
 																			if(!interrupted) {
 																																		
 																				handler.handleStreamResponse(result)
-																			
 																			}
 																			
 																																		
