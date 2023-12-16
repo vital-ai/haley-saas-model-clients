@@ -328,7 +328,7 @@ class OpenAIJavaStreamingClient {
 						
 						Random random = new Random()
 						
-						int randomInteger = random.nextInt(151) + 50
+						int randomInteger = random.nextInt(51) 
 						
 						Thread.sleep(50 + randomInteger)	
 					}					
