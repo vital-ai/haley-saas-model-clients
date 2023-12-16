@@ -269,6 +269,7 @@ class OpenAIJavaStreamingClient {
 					def words = line.split(/(?<=\b|\s)/)
 					
 					int wordCount = 0
+					
 					StringBuilder chunkBuilder = new StringBuilder()
 					
 					words.each { word ->
@@ -282,6 +283,13 @@ class OpenAIJavaStreamingClient {
 							wordCount = 0
 						}
 					}
+					
+					// add final newline back in
+					String lastChunk = chunks[ chunks.size()  - 1 ]
+					
+					lastChunk = lastChunk + "\n"
+					
+					chunks[ chunks.size()  - 1 ] = lastChunk
 					
 					String reassembled = chunks.join('')
 					
