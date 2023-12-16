@@ -260,6 +260,7 @@ class OpenAIJavaStreamingClient {
 				
 				String idString = id.toString()
 				
+				// Note: this does not handle multiple newlines in a row
 				String[] lines = testStaticContent.split("\n")
 				
 				for(String line in lines) {
@@ -327,9 +328,9 @@ class OpenAIJavaStreamingClient {
 						
 						Random random = new Random()
 						
-						int randomInteger = random.nextInt(251) + 50
+						int randomInteger = random.nextInt(151) + 50
 						
-						Thread.sleep(100 + randomInteger)	
+						Thread.sleep(50 + randomInteger)	
 					}					
 				}
 				
