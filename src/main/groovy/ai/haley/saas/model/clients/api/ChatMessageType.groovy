@@ -6,5 +6,4 @@ enum ChatMessageType {
 	
 	USER
 	
-	
 }

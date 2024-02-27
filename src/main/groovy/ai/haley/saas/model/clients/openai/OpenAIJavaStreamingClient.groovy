@@ -94,7 +94,7 @@ public interface StreamResponseHandler {
 // Main client
 class OpenAIJavaStreamingClient {
 	
-	private final static Logger log = LoggerFactory.getLogger( OpenAIJavaClient.class)
+	private final static Logger log = LoggerFactory.getLogger( OpenAIJavaStreamingClient.class)
 	
 	static JsonSlurper parser = new JsonSlurper()
 
@@ -296,7 +296,7 @@ class OpenAIJavaStreamingClient {
 					
 					if(line != reassembled) {
 						
-					 log.error( "Error in splitting static content into tokens.")
+					 log.error( "Error in splitting static content into tokens: '" + line + "'")
 					 	
 					}
 					
